@@ -3,7 +3,7 @@ from random import randint, uniform as randfloat
 np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
 
-mutation_rate = 0.5
+mutation_rate = 0.1
 
 
 def sigmoid(x):
@@ -159,7 +159,7 @@ class SnakeNeuralNetwork:
         self.played.append(facing)
 
     def get_fitness(self):
-        self.fitness = 5*self.game.score + 10*(self.alive)
+        self.fitness = 5*self.game.score + 2*(self.alive)
 
     def play(self):
         moves = 110
@@ -194,6 +194,7 @@ def breed(S1, S2):
     w4 = generate_weights(w41, w42, (4, 103))
     return w1, w2, w3, w4
 
+
 def generate_weights(mother_w, father_w, shape):
     child_w = []
     for i in range(len(mother_w)):
@@ -220,22 +221,36 @@ def generate_population():
 def survival_of_the_fittest():
     global Snakes
     breeding_group = [0] * 10
+    group = {}
     selective_group = []
     max_fitness = 0
     best_snake = None
     for i in range(len(Snakes)):
         snake = Snakes[i]
         snake.play()
-        if snake.fitness > min(breeding_group):
-            breeding_group[breeding_group.index(min(breeding_group))] = i
+        minimum = min(breeding_group)
+        if snake.fitness > minimum:
+            for key in group:
+                if group[key] == minimum:
+                    group.pop(key)
+                    break
+            breeding_group[breeding_group.index(min(breeding_group))] = snake.fitness
+            group[i] = snake.fitness
             if snake.fitness > max_fitness:
                 max_fitness = snake.fitness
                 best_snake = snake
+
+    breeding_group.sort()
+    times = 1
     for i in breeding_group:
-        Snake = Snakes[i]
-        times = int(5*(Snake.fitness / max_fitness))
-        for _ in range(times):
-            selective_group.append(i)
+        for key in group:
+            if group[key] == i:
+                for _ in range(times):
+                    selective_group.append(key)
+                group.pop(key)
+                break
+        times += 1
+
     print(best_snake.played, max_fitness)
     return selective_group
 
