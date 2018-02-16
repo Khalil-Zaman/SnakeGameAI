@@ -162,12 +162,22 @@ class SnakeNeuralNetwork:
         self.fitness = 5*self.game.score + 10*(self.alive)
 
     def play(self):
+        moves = 110
+        prevscore = 0
         while self.game.ended is False:
+            prevscore = self.game.score
             self.feed_forward()
             self.face()
             self.game.play(self.facing)
             self.ended = self.game.ended
             self.alive += 1
+            moves -= 1
+            if prevscore == self.game.score:
+                if moves <= 0:
+                    self.alive -= 110
+                    return 0
+            else:
+                moves = 100
         self.get_fitness()
         return self.fitness
 
@@ -210,6 +220,7 @@ def generate_population():
 def survival_of_the_fittest():
     global Snakes
     breeding_group = [0] * 10
+    selective_group = []
     max_fitness = 0
     best_snake = None
     for i in range(len(Snakes)):
@@ -220,19 +231,23 @@ def survival_of_the_fittest():
             if snake.fitness > max_fitness:
                 max_fitness = snake.fitness
                 best_snake = snake
+    for i in breeding_group:
+        Snake = Snakes[i]
+        times = int(5*(Snake.fitness / max_fitness))
+        for _ in range(times):
+            selective_group.append(i)
     print(best_snake.played, max_fitness)
-    return breeding_group
-
+    return selective_group
 
 
 def population_breeding():
     global Snakes, selective_breeding
     newSnakes = []
     for _ in range(25):
-        m = randint(0, 9)
-        f = randint(0, 9)
+        m = randint(0, len(selective_breeding)-1)
+        f = randint(0, len(selective_breeding)-1)
         while f == m:
-            f = randint(0, 9)
+            f = randint(0, len(selective_breeding)-1)
         w1, w2, w3, w4 = breed(Snakes[selective_breeding[m]], Snakes[selective_breeding[f]])
         child = SnakeNeuralNetwork(w1, w2, w3, w4)
         newSnakes.append(child)
