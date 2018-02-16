@@ -1,7 +1,9 @@
 import numpy as np
 from random import randint, uniform as randfloat
 np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
-np.set_printoptions(threshold=np.nan)
+
+
+mutation_rate = 0.5
 
 
 def sigmoid(x):
@@ -89,8 +91,6 @@ class SnakeGame:
         self.score += 1
 
     def play(self, face=0):
-        x = 0
-        y = 0
         if face == 0:
             face = self.facing
         self.facing = face
@@ -110,9 +110,8 @@ class SnakeNeuralNetwork:
 
     def __init__(self, w1=None, w2=None, w3=None, w4=None):
         self.game = SnakeGame()
-        self.INPUT = self.game.output()
+        self.INPUT = []
         self.bias_term = 1
-        self.INPUT = np.append(self.INPUT, self.bias_term)
         self.played = []
 
         if w1 is None:
@@ -134,6 +133,10 @@ class SnakeNeuralNetwork:
         self.fitness = 0
 
     def feed_forward(self):
+        self.INPUT = self.game.output()
+        self.bias_term = 1
+        self.INPUT = np.append(self.INPUT, self.bias_term)
+
         h = sigmoid(np.dot(self.weights1, self.INPUT.T))
         self.H = np.append(h, self.bias_term)
         h = sigmoid(np.dot(self.weights2, self.H.T))
@@ -156,9 +159,7 @@ class SnakeNeuralNetwork:
         self.played.append(facing)
 
     def get_fitness(self):
-        self.fitness = self.game.score * (self.alive)
-        self.fitness += 10*(max(self.output) - min (self.output))
-
+        self.fitness = 5*self.game.score + 10*(self.alive)
 
     def play(self):
         while self.game.ended is False:
@@ -174,7 +175,6 @@ class SnakeNeuralNetwork:
         return self.weights1.flatten(), self.weights2.flatten(), self.weights3.flatten(), self.weights4.flatten()
 
 
-mutation_rate = 0.5
 def breed(S1, S2):
     w11, w21, w31, w41 = S1.get_weights()
     w12, w22, w32, w42 = S2.get_weights()
@@ -220,7 +220,7 @@ def survival_of_the_fittest():
             if snake.fitness > max_fitness:
                 max_fitness = snake.fitness
                 best_snake = snake
-    print(best_snake.played, best_snake.output, max_fitness)
+    print(best_snake.played, max_fitness)
     return breeding_group
 
 
