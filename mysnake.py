@@ -4,7 +4,7 @@ from random import randint
 
 
 pygame.init()
-grid = [10, 10]
+grid = [3, 3]
 size = width, height = 300, 300
 speed = [2, 2]
 red = 255, 0, 0
@@ -18,9 +18,9 @@ grey = 204, 204, 204
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 
-data = [0]*100
+data = [0]*(grid[0]*grid[1])
 
-foodpos = randint(0, 99)
+foodpos = randint(0, (grid[0]*grid[1]) - 1)
 headpos = 0
 
 clear = 0
@@ -132,9 +132,9 @@ def increase_body():
         body.append(headpos)
     else:
         body.append(body[0])
-    foodpos = randint(0, 99)
+    foodpos = randint(0, grid[0]*grid[1] - 1)
     while data[foodpos] != 0:
-        foodpos = randint(0, 99)
+        foodpos = randint(0, grid[0]*grid[1] - 1)
     data[foodpos] = food
     add = 1
 

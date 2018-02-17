@@ -3,7 +3,7 @@ from random import randint, uniform as randfloat
 np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
 
-mutation_rate = 0.1
+mutation_rate = 0.5
 
 
 def sigmoid(x):
@@ -158,8 +158,14 @@ class SnakeNeuralNetwork:
         self.facing = facing
         self.played.append(facing)
 
+    def f_game_score(self):
+        return self.game.score
+
+    def f_alive(self):
+        return self.alive
+
     def get_fitness(self):
-        self.fitness = 5*self.game.score + 2*(self.alive)
+        self.fitness = 1*self.game.score + 3*self.alive
 
     def play(self):
         moves = 110
