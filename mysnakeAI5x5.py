@@ -4,10 +4,21 @@ from random import randint, uniform as randfloat
 np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
 
-mutation_rate = 0.1
-layers = 8 # Including input and output
+grid = [5, 5]
+population_size = 0
+layers = 0
+if grid[0] is 2 and grid[1] is 2:
+    layers = 10 # Including input and output
+    population_size = 100
+elif grid[0] is 5 and grid[1] is 5:
+    layers = 40
+    population_size = 50
+else:
+    print(grid)
+    sys.exit()
 
-grid = [3, 3]
+mutation_rate = 0.05
+dim = grid[0] * grid[1]
 
 
 def sigmoid(x):
@@ -23,16 +34,16 @@ class SnakeGame:
         self.bod = 2
         self.food = 3
 
-        self.data = [self.clear] * (grid[0] * grid[1])
-        self.foodpos = randint(0, (grid[0]*grid[1]) - 1)
+        self.data = [self.clear] * dim
+        self.body = []
         self.headpos = 0
-
         self.data[self.headpos] = self.head
-        self.data[self.foodpos] = self.food
+
+        self.set_food_pos()
 
         self.score = 0
         self.increase_tail = 0 # For when something was just eaten
-        self.body = []
+
 
         # 1 - Down, 2 - Left, 3 - Right, 4 - Up
         self.facing = 1
@@ -78,10 +89,11 @@ class SnakeGame:
         self.data[self.headpos] = self.head
 
     def set_food_pos(self):
-        self.foodpos = randint(0, (grid[0] * grid[1]) - 1)
-        while self.data[self.foodpos] != 0:
+        if len(self.body) + 1 != dim:
             self.foodpos = randint(0, (grid[0] * grid[1]) - 1)
-        self.data[self.foodpos] = self.food
+            while self.data[self.foodpos] != 0:
+                self.foodpos = randint(0, (grid[0] * grid[1]) - 1)
+            self.data[self.foodpos] = self.food
 
     def increase_body(self):
 
@@ -108,7 +120,7 @@ class SnakeGame:
 
     def output(self):
         if self.ended is False:
-            return np.asarray(self.data + [self.facing, self.increase_tail])
+            return np.asarray(self.data)
         return False
 
 
@@ -119,7 +131,7 @@ class SnakeNeuralNetwork:
         self.INPUT = []
         self.bias_term = 1
         self.played = []
-        dim = grid[0] * grid[1] + 1 + 1
+        # Input of the grid + facing + bias?
 
         self.weights = []
         if weights is None:
@@ -135,6 +147,7 @@ class SnakeNeuralNetwork:
         self.ended = self.game.ended
         self.alive = 0
         self.fitness = 0
+        self.forward_weights = []
 
     def feed_forward(self):
         self.INPUT = self.game.output()
@@ -142,7 +155,7 @@ class SnakeNeuralNetwork:
         self.INPUT = np.append(self.INPUT, self.bias_term)
 
         M1 = self.INPUT
-
+        self.forward_weights = []
         for i in range(len(self.weights)):
             M2 = self.weights[i]
             # If not the last layer, then add the bias term
@@ -150,20 +163,17 @@ class SnakeNeuralNetwork:
                 M1 = np.append(sigmoid(np.dot(M2, M1.T)), self.bias_term)
             else:
                 M1 = sigmoid(np.dot(M2, M1.T))
+            self.forward_weights.append(M1)
         self.output = M1
 
     def face(self):
-        facing = 0
-        if self.output[0] > 0.5 and facing == 0:
-            facing = 1
-        if self.output[1] > 0.5 and facing == 0:
-            facing = 2
-        if self.output[2] > 0.5 and facing == 0:
-            facing = 3
-        if self.output[3] > 0.5 and facing == 0:
-            facing = 4
+        output = list(self.output)
+        facing = output.index(max(output)) + 1
         self.facing = facing
         self.played.append(facing)
+        #self.played.append({facing: list(self.INPUT)})
+        output = [round(float(x), 3) for x in output]
+        self.played.append({facing: output})
 
     def f_game_score(self):
         return self.game.score
@@ -187,11 +197,11 @@ class SnakeNeuralNetwork:
         return reward
 
     def get_fitness(self):
-        self.fitness = 3*self.f_game_score() + 2*self.f_alive() + 2*self.f_weight_of_output()
+        self.fitness = self.f_game_score()*(self.f_alive()*0.1)# + 2*self.f_weight_of_output()
         return self.fitness
 
     def play(self):
-        moves = grid[0] * grid[1] + 1
+        moves = dim
         prevscore = 0
         while self.game.ended is False:
             prevscore = self.game.score
@@ -203,10 +213,10 @@ class SnakeNeuralNetwork:
             moves -= 1
             if prevscore == self.game.score:
                 if moves <= 0:
-                    self.alive -= grid[0] * grid[1] + 1
+                    self.alive -= dim
                     return 0
             else:
-                moves = grid[0] * grid[1] + 1
+                moves = dim
         self.get_fitness()
         return self.fitness
 
@@ -219,7 +229,6 @@ class SnakeNeuralNetwork:
 
 def breed(S1, S2):
     global grid
-    dim = grid[0] * grid[1] + 2
     weights_m = S1.get_weights()
     weights_f = S2.get_weights()
     weights_c = []
@@ -242,7 +251,7 @@ def generate_weights(mother_w, father_w, shape):
 
         change = 0
         if mutation_rate + mutation >= 1:
-            change = randfloat(-1, 1)
+            change = randfloat(-0.1, 0.1)
 
         if mf == 0:
             child_w.append(mother_w[i] + change)
@@ -253,18 +262,19 @@ def generate_weights(mother_w, father_w, shape):
 
 def generate_population():
     global Snakes
-    for _ in range(25):
+    for _ in range(population_size):
         Snakes.append(SnakeNeuralNetwork())
 
 
 overall_best_fitness = 0
 overall_best_played = []
+overall_best_snake = None
 def survival_of_the_fittest():
-    global Snakes, overall_best_fitness, overall_best_played
+    global Snakes, overall_best_fitness, overall_best_played, overall_best_snake
     breeding_group = [-1] * 10
     group = {}
     selective_group = []
-    max_fitness = 0
+    max_fitness = -1
     best_snake = None
     for i in range(len(Snakes)):
         snake = Snakes[i]
@@ -283,6 +293,7 @@ def survival_of_the_fittest():
             if overall_best_fitness < max_fitness:
                 overall_best_fitness = max_fitness
                 overall_best_played = best_snake.played
+                overall_best_snake = best_snake
     breeding_group.sort()
     times = 1
     for i in breeding_group:
@@ -294,14 +305,14 @@ def survival_of_the_fittest():
                 break
         times += 1
 
-    #print(best_snake.played, max_fitness)
+    print(max_fitness, best_snake.played)
     return selective_group
 
 
 def population_breeding():
     global Snakes, selective_breeding
     newSnakes = []
-    for _ in range(25):
+    for _ in range(len(Snakes)):
         m = randint(0, len(selective_breeding)-1)
         f = randint(0, len(selective_breeding)-1)
         while f == m:
@@ -314,7 +325,7 @@ def population_breeding():
 
 def save():
     global Snakes
-    snakebrains = "snake" + str(grid[0]) + "x" + str(grid[1]) + "-"
+    snakebrains = "snakebrains/snake" + str(grid[0]) + "x" + str(grid[1]) + "-"
     counter = 1
     for snake in Snakes:
         weights = snake.get_weights()
@@ -327,32 +338,31 @@ def save():
 
 def load():
     global Snakes
-    dim = grid[0] * grid[1] + 2
-    for counter in range(1, 26):
+    for counter in range(1, population_size+1):
         weight = []
         for i in range(1, layers+1):
-            snakebrains = "snake"+str(grid[0])+"x"+str(grid[1])+"-"+str(counter)+"-w"+str(i)+".dat"
+            snakebrains = "snakebrains/snake"+str(grid[0])+"x"+str(grid[1])+"-"+str(counter)+"-w"+str(i)+".dat"
             if i == layers:
                 w = np.load(snakebrains).reshape(4, dim + 1)
             else:
                 w = np.load(snakebrains).reshape(dim, dim + 1)
             weight.append(w)
         Snakes.append(SnakeNeuralNetwork(weight))
-        #snakebrains = snakebrains[:len("snake") + len(str(grid)) + len(":")] + str(counter)
 
 
 Snakes = []
-#generate_population()
-load()
+generate_population()
+#load()
 
 counter = 0
 while True:
     selective_breeding = survival_of_the_fittest()
     Snakes = population_breeding()
     counter += 1
-    if counter % 100 == 0:
-        print("Saving ...", end=" ")
+    if counter % 20 == 0:
+        #print("Saving...")
         save()
         print("Saved")
         print("Best fitness:", overall_best_fitness, "\nPlayed:", overall_best_played, "\n")
+        overall_best_fitness = 0
 

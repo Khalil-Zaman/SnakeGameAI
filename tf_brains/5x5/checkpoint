@@ -1,0 +1,2 @@
+model_checkpoint_path: "5x5brain.ckpt"
+all_model_checkpoint_paths: "5x5brain.ckpt"

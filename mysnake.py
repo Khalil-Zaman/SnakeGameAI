@@ -4,7 +4,8 @@ from random import randint
 
 
 pygame.init()
-grid = [3, 3]
+grid = [10, 10]
+dim = grid[0] * grid[1]
 size = width, height = 300, 300
 speed = [2, 2]
 red = 255, 0, 0
@@ -18,27 +19,33 @@ grey = 204, 204, 204
 screen = pygame.display.set_mode(size)
 clock = pygame.time.Clock()
 
-data = [0]*(grid[0]*grid[1])
-
-foodpos = randint(0, (grid[0]*grid[1]) - 1)
-headpos = 0
+data = [0]*dim
 
 clear = 0
 head = 1
 bod = 2
 food = 3
 
-score = 1
-
-data[headpos] = head
-data[foodpos] = food
-# Head is 1
-# Body is 2
-# Food is 3
+score = 0
 
 facing = 'd'
 add = 0
 body = []
+
+headpos = 0
+data[headpos] = head
+foodpos = randint(1, dim - 1)
+data[foodpos] = food
+
+
+def set_food_pos():
+    global body, dim, foodpos, food, data, clear
+    if len(body) != dim:
+        foodpos = randint(0, dim - 1)
+        while data[foodpos] != clear:
+            foodpos = randint(0, dim - 1)
+        data[foodpos] = food
+
 
 def background():
     global screen, grey, width, height
@@ -132,10 +139,7 @@ def increase_body():
         body.append(headpos)
     else:
         body.append(body[0])
-    foodpos = randint(0, grid[0]*grid[1] - 1)
-    while data[foodpos] != 0:
-        foodpos = randint(0, grid[0]*grid[1] - 1)
-    data[foodpos] = food
+    set_food_pos()
     add = 1
 
 
@@ -167,5 +171,4 @@ while 1:
     screen.fill(white)
     background()
     draw_grid()
-    print(data)
     pygame.display.update()

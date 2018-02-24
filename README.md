@@ -1,5 +1,5 @@
 mysnake.py
-Install the necessary modules, and run to play the famous traditional snake game
+Install the necessary modules, and run to play the traditional snake game
 
 mysnakeAI.py
 My Snake game consists a rectangular grid of a 100 squares. Given what's on each square, feed the data

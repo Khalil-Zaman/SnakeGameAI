@@ -5,7 +5,7 @@ from random import randint
 layers = 8
 
 pygame.init()
-grid = [3, 3]
+grid = [2, 2]
 size = width, height = 300, 300
 speed = [2, 2]
 red = 255, 0, 0
@@ -217,7 +217,7 @@ def load(s):
     return SnakeNeuralNetwork(weight)
 
 
-AI = load(1)
+#AI = load(1)
 while 1:
     clock.tick(1)
     for event in pygame.event.get():
@@ -232,7 +232,7 @@ while 1:
                 facing = 3
             elif event.key == pygame.K_UP:
                 facing = 4
-    facing = AI.play(data + [facing] + [add])
+    #facing = AI.play(data + [facing] + [add])
     update_body()
     update_position()
     if headpos == foodpos:
